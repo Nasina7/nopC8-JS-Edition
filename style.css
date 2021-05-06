@@ -1,0 +1,32 @@
+#Title {
+    text-align: center;
+}
+#byText {
+    text-align: center;
+}
+#screenDiv {
+    text-align: center;
+    left: 0;
+    right: 0;
+    position: absolute;
+}
+
+#registers {
+    float: left;
+}
+
+#screen {
+    width: 512px;
+    height: 256px;
+    image-rendering: pixelated;
+}
+
+@font-face {
+    font-family: 'silkscreennormal';
+    src: url('slkscr-webfont.woff') format('woff');
+}
+
+#body {
+    background-color: darkgrey;
+    font-family: 'silkscreennormal';
+}
