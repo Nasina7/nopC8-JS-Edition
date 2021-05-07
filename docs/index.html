@@ -1,5 +1,5 @@
 <head>
-    <link rel='stylesheet' href="/style.css">
+    <link rel='stylesheet' href="style.css">
 </head>
 <body id="body">
     <h1 id="Title">nopC8 Javascript Edition</h1>
@@ -29,11 +29,39 @@
     <div id="screenDiv">
         <canvas id="screen"></canvas>
         <br>
+        <form method="post">
+            <select id="romSelect" name="DropdownList">
+                <option value=0>15PUZZLE</option>
+                <option value=1>BLINKY</option>
+                <option value=2>BLITZ</option>
+                <option value=3>BRIX</option>
+                <option value=4>CONNECT4</option>
+                <option value=5>GUESS</option>
+                <option value=6>HIDDEN</option>
+                <option value=7>INVADERS</option>
+                <option value=8>KALEID</option>
+                <option value=9>MAZE</option>
+                <option value=10>MERLIN</option>
+                <option value=11>MISSLE</option>
+                <option value=12>PONG</option>
+                <option value=13>PONG2</option>
+                <option value=14>PUZZLE</option>
+                <option value=15>SYZYGY</option>
+                <option value=16>TANK</option>
+                <option value=17>TETRIS</option>
+                <option value=18>TICTAC</option>
+                <option value=19>UFO</option>
+                <option value=20>VBRIX</option>
+                <option value=21>VERS</option>
+                <option value=22>WIPEOFF</option>
+            </select>
+        </form>
+        <button id="romLoad" onClick="loadRomDrop()">Load Game</button>
         <input id="select" type="file" onchange="showFile(this)">
         <p>Current Opcode: <p id="Opcode"></p></p>
         <br>
     </div>
 
 
-    <script src="/main.js"></script>
+    <script src="main.js"></script>
 </body>

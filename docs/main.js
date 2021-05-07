@@ -4,6 +4,7 @@ document.getElementById("screen").height = '32';
 var canvas = document.getElementById("screen");
 var ctx = canvas.getContext('2d');
 
+
 // Variables related to Chip-8
 var instructionsRan;
 var RAM = new Uint8Array(0x1000);
@@ -19,7 +20,6 @@ var controls = new Array(16);
 
 
 window.addEventListener("keyup", function (event) {
-console.log("key up");
     switch(event.key)
     {
         case '1': // 1
@@ -605,7 +605,7 @@ function DRW()
                 }
             }
             //display[x + x3][y] = display[x + x3][y] ^ ((RAM[location[0]] & byteGet[x2]) != 0);
-            display[(x4 + x3) % 64][y] ^= (RAM[location[0]] & byteGet[x2]);
+            display[(x4 + x3) & 0x3F][y] ^= ((RAM[location[0]] & byteGet[x2]) != 0);
             //alert("X: 0x" + (x + x3) + "  Y: 0x" + y)
             x3++;
         }
@@ -737,6 +737,87 @@ function LDVXI()
 // End of Opcodes
 
 var romLoaded = false;
+
+// Rom List
+var fileList = [
+    "/docs/rom/15PUZZLE",
+    "/docs/rom/BLINKY",
+    "/docs/rom/BLITZ",
+    "/docs/rom/BRIX",
+    "/docs/rom/CONNECT4",
+    "/docs/rom/GUESS",
+    "/docs/rom/HIDDEN",
+    "/docs/rom/INVADERS",
+    "/docs/rom/KALEID",
+    "/docs/rom/MAZE",
+    "/docs/rom/MERLIN",
+    "/docs/rom/MISSLE",
+    "/docs/rom/PONG",
+    "/docs/rom/PONG2",
+    "/docs/rom/PUZZLE",
+    "/docs/rom/SYZYGY",
+    "/docs/rom/TANK",
+    "/docs/rom/TETRIS",
+    "/docs/rom/TICTAC",
+    "/docs/rom/UFO",
+    "/docs/rom/VBRIX",
+    "/docs/rom/VERS",
+    "/docs/rom/WIPEOFF"
+];
+
+function loadRomDrop()
+{
+    var e2 = document.getElementById("romSelect");
+    var value = e2.value;
+
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", fileList[value], true);
+    xmlHttp.responseType = "arraybuffer";
+    xmlHttp.send();
+    xmlHttp.onload = function (oEvent)
+    {
+        var arrayBuffer2 = xmlHttp.response;
+        if(arrayBuffer2)
+        {
+            var rom = new Uint8Array(arrayBuffer2);
+            
+        }
+        romLoaded = true;
+
+        for(var i = 0; i < rom.length; i++)
+        {
+            RAM[i + 0x200] = rom[i];
+        }
+
+        for(var y = 0; y < 32; y++)
+        {
+            for(var x = 0; x < 64; x++)
+            {
+                display[x][y] = 0;
+            }
+        }
+
+        PC[0] = 0x200;
+        instructionsRan = 0;
+        for(var location = 0; location < 80; location++)
+        {
+            RAM[location] = font[location];
+        }
+        for(var x = 0; x < 0x10; x++)
+        {
+            V[x] = 0;
+        }
+        for(var x = 0; x < 16; x++)
+        {
+            controls[x] = 1;
+        }
+    };
+    
+
+    
+}
+
+
 function showFile(input)
 {
     let file = input.files[0];
@@ -785,24 +866,23 @@ if(romLoaded == true)
     opcode[0] = ((RAM[PC[0]] << 8) | (RAM[PC[0] + 1]));
     runOpcode();
     instructionsRan++;
-    if(V[0xE] == 0x16)
-    {
-
-    }
     if(breakpoint == 1)
     {
         alert("Look at Regs!");
     }
-    if((instructionsRan % 15) == 0)
+    if((instructionsRan % frameLength) == 0)
     {
-        if(dTimer[0] != 0)
+        for(var y = 0; y < 32; y++)
         {
-            dTimer[0]--;
+            for(var x = 0; x < 64; x++)
+            {
+                if(display[x][y] != 0 && display[x][y] != 1)
+                {
+                    alert("BAD DISPLAY VAR!");
+                    alert(display[x][y]);
+                }
+            }
         }
-        console.log(controls[controlLookup[7]]);
-    }
-    if((instructionsRan % 15) == 0)
-    {
         forceRender = false;
         var imageData = ctx.getImageData(0,0,64,32);
         var data = imageData.data;
@@ -852,4 +932,4 @@ setInterval(function updateTimer(){
              dTimer[0]--;
          }
     }
-    }, (16.6666666666666666))
+}, (16.6666666666666666))
