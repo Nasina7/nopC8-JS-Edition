@@ -740,11 +740,11 @@ var romLoaded = false;
 
 // Rom List
 var fileList = [
-    "docs/rom/15PUZZLE",
-    "docs/rom/BLINKY",
-    "docs/rom/BLITZ",
-    "docs/rom/BRIX",
-    "docs/rom/CONNECT4",
+    "rom/15PUZZLE",
+    "rom/BLINKY",
+    "rom/BLITZ",
+    "rom/BRIX",
+    "rom/CONNECT4",
     "docs/rom/GUESS",
     "docs/rom/HIDDEN",
     "docs/rom/INVADERS",
