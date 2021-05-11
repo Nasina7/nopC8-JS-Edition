@@ -10,14 +10,17 @@ var instructionsRan;
 var RAM = new Uint8Array(0x1000);
 
 
-var display = new Array(64);
+var display = new Array(128);
 for(var i = 0; i < display.length; i++)
 {
-    display[i] = new Array(32);
+    display[i] = new Array(64);
 }
 
 var controls = new Array(16);
-
+var quirks;
+var quirksJ;
+var quirksL;
+var quirksS;
 
 window.addEventListener("keyup", function (event) {
     switch(event.key)
@@ -163,7 +166,7 @@ window.addEventListener("keypress", function (event) {
 }, true);
 
 
-const frameLength = 15;
+var frameLength = 15;
 var V = new Uint8Array(0x10);
 var breakpoint;
 var opcode = new Uint16Array(1);
@@ -182,6 +185,14 @@ byteGet[4] = 0x10;
 byteGet[5] = 0x20;
 byteGet[6] = 0x40;
 byteGet[7] = 0x80;
+byteGet[8] = 0x100;
+byteGet[9] = 0x200;
+byteGet[10] = 0x400;
+byteGet[11] = 0x800;
+byteGet[12] = 0x1000;
+byteGet[13] = 0x2000;
+byteGet[14] = 0x4000;
+byteGet[15] = 0x8000;
 var font = [
 	0xF0, 0x90, 0x90, 0x90, 0xF0,		// 0
 	0x20, 0x60, 0x20, 0x20, 0x70,		// 1
@@ -219,7 +230,8 @@ var controlLookup = [
     15 // F =
 ];
 var forceRender = false;
-
+var getScreenX = 64;
+var getScreenY = 32;
 
 function runOpcode()
 {
@@ -234,6 +246,10 @@ function runOpcode()
 
                 case 0xEE:
                     RET();
+                break;
+
+                case 0xFF:
+                    EECM();
                 break;
 
                 default:
@@ -431,6 +447,16 @@ function RET()
     //PC[0] += 2;
 }
 
+var screenMode = 0;
+
+function EECM() //SCHIP
+{
+    getScreenX = 128;
+    getScreenY = 64;
+    screenMode = 1;
+    PC[0] += 2;
+}
+
 function JP()
 {
     PC[0] = opcode[0] & 0x0FFF;
@@ -493,18 +519,30 @@ function LDVXVY()
 function ORVXVY()
 {
     V[(opcode[0] & 0x0F00) >> 8] |= V[(opcode[0] & 0x00F0) >> 4];
+    if(quirksL == true)
+    {
+        V[0xF] = 0;
+    }
     PC[0] += 2;
 }
 
 function ANDVXVY()
 {
     V[(opcode[0] & 0x0F00) >> 8] &= V[(opcode[0] & 0x00F0) >> 4];
+    if(quirksL == true)
+    {
+        V[0xF] = 0;
+    }
     PC[0] += 2;
 }
 
 function XORVXVY()
 {
     V[(opcode[0] & 0x0F00) >> 8] ^= V[(opcode[0] & 0x00F0) >> 4];
+    if(quirksL == true)
+    {
+        V[0xF] = 0;
+    }
     PC[0] += 2;
 }
 
@@ -535,8 +573,16 @@ function SUBVXVY()
 
 function SHRVXVY()
 {
-    V[0xF] = (V[(opcode[0] & 0x0F00) >> 8] & 1);
-    V[(opcode[0] & 0x0F00) >> 8] /= 2;
+    V[0xF] = (V[(opcode[0] & 0x00F0) >> 4] & 1);
+    if(quirks == false)
+    {
+        V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x00F0) >> 4] >> 1;
+    }
+    if(quirks == true)
+    {
+        V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x0F00) >> 8] >> 1;
+    }
+    
     PC[0] += 2;
 }
 
@@ -554,11 +600,18 @@ function SUBNVXVY()
 function SHLVXVY()
 {
     V[0xF] = 0;
-    if((V[(opcode[0] & 0x0F00) >> 8] & 0x80) != 0)
+    if((V[(opcode[0] & 0x00F0) >> 4] & 0x80) != 0)
     {
         V[0xF] = 1;
     }
-    V[(opcode[0] & 0x0F00) >> 8] *= 2;
+    if(quirks == false)
+    {
+        V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x00F0) >> 4] << 1;
+    }
+    if(quirks == true)
+    {
+        V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x0F00) >> 8] << 1;
+    }
     PC[0] += 2;
 }
 
@@ -590,28 +643,30 @@ function DRW()
     location[0] = I[0];
     var x3 = 0;
     var y2 = V[(opcode[0] & 0x00F0) >> 4];
-
     //printf("XY: 0x%X 0x%X 0x%X 0x%X\n", x, y2, height, location);
-
-    for(var y = y2; y < height + y2; y++)
+    if(screenMode == 0)
     {
-        for(var x2 = 7; x2 != (0 - 1); x2--)
+        for(var y = y2; y < height + y2; y++)
         {
-            if(display[(x4 + x3) & 0x3F][y] != 0)
+            for(var x2 = 7; x2 != (0 - 1); x2--)
             {
-                if(((RAM[location[0]] & byteGet[x2]) != 0))
+                if(display[(x4 + x3) & 0x3F][y] != 0)
                 {
-                    V[0xF] = 1;
+                    if(((RAM[location[0]] & byteGet[x2]) != 0))
+                    {
+                        V[0xF] = 1;
+                    }
                 }
+                //display[x + x3][y] = display[x + x3][y] ^ ((RAM[location[0]] & byteGet[x2]) != 0);
+                display[(x4 + x3) & 0x3F][y] ^= ((RAM[location[0]] & byteGet[x2]) != 0);
+                //alert("X: 0x" + (x + x3) + "  Y: 0x" + y)
+                x3++;
             }
-            //display[x + x3][y] = display[x + x3][y] ^ ((RAM[location[0]] & byteGet[x2]) != 0);
-            display[(x4 + x3) & 0x3F][y] ^= ((RAM[location[0]] & byteGet[x2]) != 0);
-            //alert("X: 0x" + (x + x3) + "  Y: 0x" + y)
-            x3++;
+            x3 = 0;
+            location[0]++;
         }
-        x3 = 0;
-        location[0]++;
     }
+
 
     //chip8.breakpoint = true;
     PC[0] += 2;
@@ -621,7 +676,15 @@ function DRW()
 
 function JPV0()
 {
-    PC[0] = ((opcode[0] & 0x0FFF) + V[0]);
+    if(quirksJ == false)
+    {
+        PC[0] = ((opcode[0] & 0x0FFF) + V[0]);
+    }
+    if(quirksJ == true)
+    {
+        PC[0] = ((opcode[0] & 0x0FFF) + V[((opcode[0] & 0x0F00) >> 8)]);
+    }
+    
 }
 
 function RNDVXB()
@@ -715,6 +778,10 @@ function LDIVX()
         RAM[location[0]] = V[x];
         location[0]++;
     }
+    if(quirksS == false)
+    {
+        I[0] = location[0];
+    }
     PC[0] += 2;
 }
 function LDVXI()
@@ -725,6 +792,10 @@ function LDVXI()
     {
         V[x] = RAM[location[0]];
         location[0]++;
+    }
+    if(quirksS == false)
+    {
+        I[0] = location[0];
     }
     PC[0] += 2;
 }
@@ -762,7 +833,14 @@ var fileList = [
     "rom/UFO",
     "rom/VBRIX",
     "rom/VERS",
-    "rom/WIPEOFF"
+    "rom/WIPEOFF",
+    "rom/8CE1",
+    "rom/8CE2",
+    "rom/8CE3",
+    "rom/RPS",
+    "rom/DANMAKU",
+    "rom/FLIGHT",
+    "rom/SNAKE"
 ];
 
 function loadRomDrop()
@@ -789,15 +867,16 @@ function loadRomDrop()
             RAM[i + 0x200] = rom[i];
         }
 
-        for(var y = 0; y < 32; y++)
+        for(var y = 0; y < 64; y++)
         {
-            for(var x = 0; x < 64; x++)
+            for(var x = 0; x < 128; x++)
             {
                 display[x][y] = 0;
             }
         }
 
         PC[0] = 0x200;
+        screenMode = 0;
         instructionsRan = 0;
         for(var location = 0; location < 80; location++)
         {
@@ -831,15 +910,16 @@ function showFile(input)
             RAM[i + 0x200] = rom[i];
         }
 
-        for(var y = 0; y < 32; y++)
+        for(var y = 0; y < 64; y++)
         {
-            for(var x = 0; x < 64; x++)
+            for(var x = 0; x < 128; x++)
             {
                 display[x][y] = 0;
             }
         }
 
         PC[0] = 0x200;
+        screenMode = 0;
         instructionsRan = 0;
         for(var location = 0; location < 80; location++)
         {
@@ -858,59 +938,82 @@ function showFile(input)
     reader.readAsArrayBuffer(file);
 }
 
+
+function loadOpFrame()
+{
+    document.getElementById("perFrame").value = frameLength;
+}
+
+function saveOpFrame()
+{
+    frameLength = document.getElementById("perFrame").value;
+}
+
+
 var breakpoint = 0;
 
 setInterval(function mainLoop(){
 if(romLoaded == true)
 {
-    opcode[0] = ((RAM[PC[0]] << 8) | (RAM[PC[0] + 1]));
-    runOpcode();
-    instructionsRan++;
-    if(breakpoint == 1)
+    if(document.getElementById("perFrame").value != 0)
     {
-        alert("Look at Regs!");
+        frameLength = document.getElementById("perFrame").value
     }
-    if((instructionsRan % frameLength) == 0)
+    document.getElementById("perFrame").value = frameLength;
+    quirks = document.getElementById("quirks").checked;
+    quirksJ = document.getElementById("quirksJ").checked;
+    quirksL = document.getElementById("quirksL").checked;
+    quirksS = document.getElementById("quirksS").checked;
+    //alert(document.getElementById("quirks").checked);
+    for(var l = 0; l != frameLength; l++)
     {
-        for(var y = 0; y < 32; y++)
+        opcode[0] = ((RAM[PC[0]] << 8) | (RAM[PC[0] + 1]));
+        runOpcode();
+        instructionsRan++;
+        if(breakpoint == 1)
         {
-            for(var x = 0; x < 64; x++)
+            alert("Look at Regs!");
+        }
+    }
+    for(var y = 0; y < getScreenY; y++)
+    {
+        for(var x = 0; x < getScreenX; x++)
+        {
+            if(display[x][y] != 0 && display[x][y] != 1)
             {
-                if(display[x][y] != 0 && display[x][y] != 1)
-                {
-                    alert("BAD DISPLAY VAR!");
-                    alert(display[x][y]);
-                }
+                alert("BAD DISPLAY VAR!");
+                alert(display[x][y]);
             }
         }
-        forceRender = false;
-        var imageData = ctx.getImageData(0,0,64,32);
-        var data = imageData.data;
-        for(var i = 0; i < data.length; i += 4)
+    }
+    forceRender = false;
+    var imageData = ctx.getImageData(0,0,getScreenX,getScreenY);
+    var data = imageData.data;
+    for(var i = 0; i < (data.length); i += 4)
+    {
+        data[i] = 0xFF;
+        data[i + 1] = 0x00;
+        data[i + 2] = 0x00;
+        data[i + 3] = 0xFF;
+        //alert((i / 4) & 0xFFFFFF80);
+        if(display[(i / 4) % getScreenX][(i / 4) >> 6] == 0)
         {
-            data[i] = 0xFF;
+            data[i] = 0x00;
             data[i + 1] = 0x00;
             data[i + 2] = 0x00;
             data[i + 3] = 0xFF;
-            //alert((i / 4) & 0xFFFFFF80);
-            if(display[(i / 4) % 64][(i / 4) >> 6] == 0)
-            {
-                data[i] = 0x00;
-                data[i + 1] = 0x00;
-                data[i + 2] = 0x00;
-                data[i + 3] = 0xFF;
-            }
-            if(display[(i / 4) % 64][(i / 4) >> 6] != 0)
-            {
-                data[i] = 0xFF;
-                data[i + 1] = 0xFF;
-                data[i + 2] = 0xFF;
-                data[i + 3] = 0xFF;
-            }
         }
-    
-        ctx.putImageData(imageData, 0, 0);
+        if(display[(i / 4) % getScreenX][(i / 4) >> 6] != 0)
+        {
+            data[i] = 0xFF;
+            data[i + 1] = 0xFF;
+            data[i + 2] = 0xFF;
+            data[i + 3] = 0xFF;
+        }
     }
+    
+
+    ctx.putImageData(imageData, 0, 0);
     document.getElementById("Opcode").innerHTML = "0x" + opcode[0].toString(16);
 
     for(var i = 0; i < 0x10; i++)
@@ -922,7 +1025,7 @@ if(romLoaded == true)
 }
 
 
-}, ((16.6666666666666666) / frameLength))
+}, ((16.6666666666666666)))
 
 setInterval(function updateTimer(){
     if(romLoaded == true)

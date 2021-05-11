@@ -32,10 +32,15 @@
         <form method="post">
             <select id="romSelect" name="DropdownList">
                 <option value=0>15PUZZLE</option>
+                <option value=23>Ace Attourny Disk 1</option>
+                <option value=24>Ace Attourny Disk 2</option>
+                <option value=25>Ace Attourny Disk 3</option>
                 <option value=1>BLINKY</option>
                 <option value=2>BLITZ</option>
                 <option value=3>BRIX</option>
                 <option value=4>CONNECT4</option>
+                <option value=27>DANMAKU (Not Working)</option>
+                <option value=28>FLIGHT</option>
                 <option value=5>GUESS</option>
                 <option value=6>HIDDEN</option>
                 <option value=7>INVADERS</option>
@@ -46,6 +51,8 @@
                 <option value=12>PONG</option>
                 <option value=13>PONG2</option>
                 <option value=14>PUZZLE</option>
+                <option value=26>RPS</option>
+                <option value=29>SNAKE</option>
                 <option value=15>SYZYGY</option>
                 <option value=16>TANK</option>
                 <option value=17>TETRIS</option>
@@ -60,6 +67,11 @@
         <input id="select" type="file" onchange="showFile(this)">
         <p>Current Opcode: <p id="Opcode"></p></p>
         <br>
+        <p>Opcodes per Frame: <p><input id="perFrame" type="number">
+        <p>Shift Quirks: </p><input id="quirks" type="checkbox">
+        <p>Load/Store Quirks: </p><input id="quirksS" type="checkbox">
+        <p>Jump Quirks: </p><input id="quirksJ" type="checkbox">
+        <p>Logic Quirks: </p><input id="quirksL" type="checkbox">
     </div>
 
 
