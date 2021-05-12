@@ -8,12 +8,22 @@ var ctx = canvas.getContext('2d');
 // Variables related to Chip-8
 var instructionsRan;
 var RAM = new Uint8Array(0x1000);
-
+var R = new Uint8Array(0x8);
+for(var x = 0; x < 8; x++)
+{
+    R[x] = 0;
+}
 
 var display = new Array(128);
 for(var i = 0; i < display.length; i++)
 {
     display[i] = new Array(64);
+}
+
+var displayRGB = new Array(128);
+for(var i = 0; i < displayRGB.length; i++)
+{
+    displayRGB[i] = new Array(64);
 }
 
 var controls = new Array(16);
@@ -174,6 +184,7 @@ var I = new Uint16Array(1);
 var dTimer = new Uint8Array(1);
 var sTimer = new Uint8Array(1);
 var PC = new Uint16Array(1);
+var pPC = new Uint16Array(1);
 var SP = new Uint8Array(1);
 var spStack = new Uint16Array(0x10);
 var byteGet = new Uint8Array(8);
@@ -400,6 +411,10 @@ function runOpcode()
                     LDFVX();
                 break;
 
+                case 0x30:
+                    LDFVXS();
+                break;
+
                 case 0x33:
                     LDBVX();
                 break;
@@ -410,6 +425,14 @@ function runOpcode()
 
                 case 0x65:
                     LDVXI();
+                break;
+
+                case 0x75:
+                    SV0VXRPL();
+                break;
+
+                case 0x85:
+                    RV0VXRPL();
                 break;
 
                 default:
@@ -430,9 +453,9 @@ function runOpcode()
 
 function CLS()
 {
-    for(var y = 0; y < 32; y++)
+    for(var y = 0; y < getScreenY; y++)
     {
-        for(var x = 0; x < 64; x++)
+        for(var x = 0; x < getScreenX; x++)
         {
             display[x][y] = 0;
         }
@@ -455,6 +478,8 @@ function EECM() //SCHIP
     getScreenY = 64;
     screenMode = 1;
     PC[0] += 2;
+    document.getElementById("screen").width = '128';
+    document.getElementById("screen").height = '64';
 }
 
 function JP()
@@ -643,12 +668,14 @@ function DRW()
     location[0] = I[0];
     var x3 = 0;
     var y2 = V[(opcode[0] & 0x00F0) >> 4];
+    console.log("height: " + height);
+    var width = 7;
     //printf("XY: 0x%X 0x%X 0x%X 0x%X\n", x, y2, height, location);
     if(screenMode == 0)
     {
         for(var y = y2; y < height + y2; y++)
         {
-            for(var x2 = 7; x2 != (0 - 1); x2--)
+            for(var x2 = width; x2 != (0 - 1); x2--)
             {
                 if(display[(x4 + x3) & 0x3F][y] != 0)
                 {
@@ -666,7 +693,88 @@ function DRW()
             location[0]++;
         }
     }
+    if(screenMode != 0)
+    {
+        if(height == 0)
+        {
+            height = 16;
+            width = 15;
+        }
+        console.log(height);
+        for(var y = y2; y < height + y2; y++)
+        {
+            var newRow = 0;
+            for(var x2 = width; x2 != (0 - 1); x2--)
+            {
+                if(display[(x4 + x3) & 0x7F][y % 64] != 0)
+                {
 
+                    if(width == 15)
+                    {
+                        if(x2 > 7)
+                        {
+                            var dataG = RAM[location[0]];
+                            display[(x4 + x3) & 0x7F][y % 64] ^= ((dataG & byteGet[x2 & 0x7]) != 0);
+                        }
+                        if(x2 <= 7)
+                        {
+                            var dataG = RAM[location[0] + 1];
+                            //display[(x4 + x3) & 0x7F][y] ^= ((dataG & byteGet[x2 & 0x7]) != 0);
+                        }
+                    }
+                    if(width != 15)
+                    {
+                        var dataG = RAM[location[0]];
+                    }
+                    if(display[(x4 + x3) & 0x7F][y % 64] == 1)
+                    {
+                        if(((dataG & byteGet[x2]) != 0) == 1)
+                        {
+                            if(newRow == 0)
+                            {
+                                V[0xF]++;
+                                newRow = 1;
+                            }
+                        }
+                    }
+                    //if(((RAM[location[0]] & byteGet[x2]) != 0))
+                    //{
+                    //    V[0xF] = 1;
+                    //}
+                }
+                //display[x + x3][y] = display[x + x3][y] ^ ((RAM[location[0]] & byteGet[x2]) != 0);
+                //var dataG = ((RAM[location[0] + 1] << 8) | RAM[location[0]]);
+                //var dataG = RAM[location[0] + 1];
+                //var dataG = RAM[location[0]];
+                if(width == 15)
+                {
+                    if(x2 > 7)
+                    {
+                        var dataG = RAM[location[0]];
+                        display[(x4 + x3) & 0x7F][y % 64] ^= ((dataG & byteGet[x2 & 0x7]) != 0);
+                    }
+                    if(x2 <= 7)
+                    {
+                        var dataG = RAM[location[0] + 1];
+                        //display[(x4 + x3) & 0x7F][y] ^= ((dataG & byteGet[x2 & 0x7]) != 0);
+                    }
+                }
+                if(width != 15)
+                {
+                    var dataG = RAM[location[0]];
+                }
+                display[(x4 + x3) & 0x7F][y % 64] ^= ((dataG & byteGet[x2]) != 0);
+                //alert("X: 0x" + (x + x3) + "  Y: 0x" + y)
+                x3++;
+            }
+            x3 = 0;
+            location[0]++;
+            if(width == 15)
+            {
+                location[0]++;
+            }
+        }
+    }
 
     //chip8.breakpoint = true;
     PC[0] += 2;
@@ -761,6 +869,12 @@ function LDFVX()
     PC[0] += 2;
 }
 
+function LDFVXS()
+{
+    I[0] = (( V[(opcode[0] & 0x0F00) >> 8]) * 10);
+    PC[0] += 2;
+}
+
 function LDBVX()
 {
     RAM[I[0]] = ((V[(opcode[0] & 0x0F00) >> 8] / 100) % 10);
@@ -800,7 +914,23 @@ function LDVXI()
     PC[0] += 2;
 }
 
+function SV0VXRPL()
+{
+    for(var x = 0; x <= ((opcode[0] & 0x0F00) >> 8); x++)
+    {
+        R[x] = V[x];
+    }
+    PC[0] += 2;
+}
 
+function RV0VXRPL()
+{
+    for(var x = 0; x <= ((opcode[0] & 0x0F00) >> 8); x++)
+    {
+        V[x] = R[x];
+    }
+    PC[0] += 2;
+}
 
 
 
@@ -822,7 +952,7 @@ var fileList = [
     "rom/KALEID",
     "rom/MAZE",
     "rom/MERLIN",
-    "rom/MISSLE",
+    "rom/MISSILE",
     "rom/PONG",
     "rom/PONG2",
     "rom/PUZZLE",
@@ -840,11 +970,43 @@ var fileList = [
     "rom/RPS",
     "rom/DANMAKU",
     "rom/FLIGHT",
-    "rom/SNAKE"
+    "rom/SNAKE",
+    "rom/BadKaiJuJu.ch8",
+    "rom/br8kout.ch8",
+    "rom/caveexplorer.ch8",
+    "rom/chipwar.ch8",
+    "rom/down8.ch8",
+    "rom/fuse.ch8",
+    "rom/ghostEscape.ch8",
+    "rom/masquer8.ch8",
+    "rom/mastermind.ch8",
+    "rom/mini-lights-out.ch8",
+    "rom/octojam1title.ch8",
+    "rom/octojam2title.ch8",
+    "rom/octojam3title.ch8",
+    "rom/octojam4title.ch8",
+    "rom/octojam5title.ch8",
+    "rom/octojam6title.ch8",
+    "rom/octojam7title.ch8",
+    "rom/octorancher.ch8",
+    "rom/outlaw.ch8",
+    "rom/petdog.ch8",
+    "rom/piper.ch8",
+    "rom/pumpkindressup.ch8",
+    "rom/slipperyslope.ch8",
+    "rom/spacejam.ch8",
+    "rom/tank.ch8",
+    "rom/tombstontipp.ch8",
+    "rom/rockto.ch8",
+    "rom/supersquare.ch8",
+    "rom/turnover77.ch8",
+    "rom/ultimatetictactoe.ch8"
 ];
 
 function loadRomDrop()
 {
+    document.getElementById("screen").width = '64';
+    document.getElementById("screen").height = '32';
     var e2 = document.getElementById("romSelect");
     var value = e2.value;
 
@@ -899,6 +1061,8 @@ function loadRomDrop()
 
 function showFile(input)
 {
+    document.getElementById("screen").width = '64';
+    document.getElementById("screen").height = '32';
     let file = input.files[0];
     let reader = new FileReader();
     reader.onload = function(e) {
@@ -968,10 +1132,20 @@ if(romLoaded == true)
     for(var l = 0; l != frameLength; l++)
     {
         opcode[0] = ((RAM[PC[0]] << 8) | (RAM[PC[0] + 1]));
+        pPC[0] = PC[0];
         runOpcode();
         instructionsRan++;
         if(breakpoint == 1)
         {
+            document.getElementById("Opcode").innerHTML = "0x" + opcode[0].toString(16);
+
+            for(var i = 0; i < 0x10; i++)
+            {
+                document.getElementById("V" + i).innerHTML = "V" + i + ": 0x" + V[i].toString(16);
+            }
+            document.getElementById("I").innerHTML = "I: 0x" + I[0].toString(16);
+            document.getElementById("PC").innerHTML = "PC: 0x" + PC[0].toString(16);
+            document.getElementById("Prev PC").innerHTML = "Prev PC: 0x" + pPC[0].toString(16);
             alert("Look at Regs!");
         }
     }
@@ -988,40 +1162,48 @@ if(romLoaded == true)
     }
     forceRender = false;
     var imageData = ctx.getImageData(0,0,getScreenX,getScreenY);
-    var data = imageData.data;
-    for(var i = 0; i < (data.length); i += 4)
+    var data = imageData.data
+
+    for(var y = 0; y < imageData.height; y++)
     {
-        data[i] = 0xFF;
-        data[i + 1] = 0x00;
-        data[i + 2] = 0x00;
-        data[i + 3] = 0xFF;
-        //alert((i / 4) & 0xFFFFFF80);
-        if(display[(i / 4) % getScreenX][(i / 4) >> 6] == 0)
+        for(var x = 0; x < imageData.width; x++)
         {
-            data[i] = 0x00;
-            data[i + 1] = 0x00;
-            data[i + 2] = 0x00;
-            data[i + 3] = 0xFF;
-        }
-        if(display[(i / 4) % getScreenX][(i / 4) >> 6] != 0)
-        {
-            data[i] = 0xFF;
-            data[i + 1] = 0xFF;
-            data[i + 2] = 0xFF;
-            data[i + 3] = 0xFF;
+            var i = ((y * imageData.width) + x) * 4;
+            if(display[x][y] == 0)
+            {
+                data[i] = 0x00;
+                data[i + 1] = 0x00;
+                data[i + 2] = 0x00;
+                data[i + 3] = 0xFF;
+            }
+            if(display[x][y] == 1)
+            {
+                data[i] = 0xFF;
+                data[i + 1] = 0xFF;
+                data[i + 2] = 0xFF;
+                data[i + 3] = 0xFF;
+            }
+            if(display[x][y] != 0 && display[x][y] != 1 )
+            {
+                data[i] = 0xFF;
+                data[i + 1] = 0x00;
+                data[i + 2] = 0x00;
+                data[i + 3] = 0xFF;
+                alert("X: " + x + " Y: " + y);
+            }
         }
     }
-    
 
-    ctx.putImageData(imageData, 0, 0);
     document.getElementById("Opcode").innerHTML = "0x" + opcode[0].toString(16);
 
-    for(var i = 0; i < 0x10; i++)
-    {
-        document.getElementById("V" + i).innerHTML = "V" + i + ": 0x" + V[i].toString(16);
-    }
-    document.getElementById("I").innerHTML = "I: 0x" + I[0].toString(16);
-    document.getElementById("PC").innerHTML = "PC: 0x" + PC[0].toString(16);
+        for(var i = 0; i < 0x10; i++)
+        {
+            document.getElementById("V" + i).innerHTML = "V" + i + ": 0x" + V[i].toString(16);
+        }
+        document.getElementById("I").innerHTML = "I: 0x" + I[0].toString(16);
+        document.getElementById("PC").innerHTML = "PC: 0x" + PC[0].toString(16);
+        document.getElementById("Prev PC").innerHTML = "Prev PC: 0x" + pPC[0].toString(16);
+    ctx.putImageData(imageData, 0, 0);
 }
 
 
