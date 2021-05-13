@@ -259,6 +259,18 @@ function runOpcode()
                     RET();
                 break;
 
+                case 0xFB:
+                    SCR();
+                break;
+
+                case 0xFC:
+                    SCL();
+                break;
+
+                case 0xFE:
+                    DECM();
+                break;
+
                 case 0xFF:
                     EECM();
                 break;
@@ -449,6 +461,19 @@ function runOpcode()
     }
 }
 
+
+function sChipQuirks()
+{
+    quirks = 1;
+    quirksJ = 1;
+    quirksL = 1;
+    quirksS = 1;
+    document.getElementById("quirks").checked = true;
+    document.getElementById("quirksJ").checked = true;
+    document.getElementById("quirksL").checked = true;
+    document.getElementById("quirksS").checked = true;
+}
+
 // Beginning of Opcodes
 
 function CLS()
@@ -472,14 +497,112 @@ function RET()
 
 var screenMode = 0;
 
+function DECM() //SCHIP
+{
+    sChipQuirks();
+    getScreenX = 64;
+    getScreenY = 32;
+    screenMode = 0;
+    PC[0] += 2;
+    document.getElementById("screen").width = '64';
+    document.getElementById("screen").height = '32';
+}
+
 function EECM() //SCHIP
 {
+    sChipQuirks();
     getScreenX = 128;
     getScreenY = 64;
     screenMode = 1;
     PC[0] += 2;
     document.getElementById("screen").width = '128';
     document.getElementById("screen").height = '64';
+}
+
+function SCL() //SCHIP
+{
+    sChipQuirks();
+    if(screenMode == 0)
+    {
+        for(var y = 0; y < 32; y++)
+        {
+            for(var x = 0; x < 64; x++)
+            {
+                if(x < 62)
+                {
+                    display[x][y] = display[x + 2][y];
+                }
+                if(x >= 62)
+                {
+                    display[x][y] = 0;
+                }
+            }
+        }
+    }
+    if(screenMode == 1)
+    {
+        for(var y = 0; y < 64; y++)
+        {
+            for(var x = 0; x < 128; x++)
+            {
+                if(x < 124)
+                {
+                    display[x][y] = display[x + 4][y];
+                }
+                if(x >= 124)
+                {
+                    display[x][y] = 0;
+                }
+            }
+        }
+    }
+    PC[0] += 2;
+}
+
+function SCR() //SCHIP
+{
+    sChipQuirks();
+    if(screenMode == 0)
+    {
+        for(var y = 0; y < 32; y++)
+        {
+            for(var x = 0; x < 64; x++)
+            {
+                if(x > 1)
+                {
+                    display[x][y] = display[x - 2][y];
+                }
+            }
+        }
+        for(var y = 0; y < 32; y++)
+        {
+            for(var x = 0; x < 2; x++)
+            {
+                display[x][y] = 0;
+            }
+        }
+    }
+    if(screenMode == 1)
+    {
+        for(var y = 0; y < 64; y++)
+        {
+            for(var x = 127; x != 3; x--)
+            {
+                if(x >= 4)
+                {
+                    display[x][y] = display[x - 4][y];
+                }
+            }
+        }
+        for(var y = 0; y < 64; y++)
+        {
+            for(var x = 0; x < 4; x++)
+            {
+                display[x][y] = 0;
+            }
+        }
+    }
+    PC[0] += 2;
 }
 
 function JP()
@@ -544,6 +667,14 @@ function LDVXVY()
 function ORVXVY()
 {
     V[(opcode[0] & 0x0F00) >> 8] |= V[(opcode[0] & 0x00F0) >> 4];
+    if(quirksL == false && (V[(opcode[0] & 0x0F00) >> 8] == 0))
+    {
+        V[0xF] = 1;
+    }
+    if(quirksL == false && (V[(opcode[0] & 0x0F00) >> 8] != 0))
+    {
+        V[0xF] = 0;
+    }
     if(quirksL == true)
     {
         V[0xF] = 0;
@@ -554,6 +685,14 @@ function ORVXVY()
 function ANDVXVY()
 {
     V[(opcode[0] & 0x0F00) >> 8] &= V[(opcode[0] & 0x00F0) >> 4];
+    if(quirksL == false && (V[(opcode[0] & 0x0F00) >> 8] == 0))
+    {
+        V[0xF] = 1;
+    }
+    if(quirksL == false && (V[(opcode[0] & 0x0F00) >> 8] != 0))
+    {
+        V[0xF] = 0;
+    }
     if(quirksL == true)
     {
         V[0xF] = 0;
@@ -564,6 +703,14 @@ function ANDVXVY()
 function XORVXVY()
 {
     V[(opcode[0] & 0x0F00) >> 8] ^= V[(opcode[0] & 0x00F0) >> 4];
+    if(quirksL == false && (V[(opcode[0] & 0x0F00) >> 8] == 0))
+    {
+        V[0xF] = 1;
+    }
+    if(quirksL == false && (V[(opcode[0] & 0x0F00) >> 8] != 0))
+    {
+        V[0xF] = 0;
+    }
     if(quirksL == true)
     {
         V[0xF] = 0;
@@ -598,13 +745,14 @@ function SUBVXVY()
 
 function SHRVXVY()
 {
-    V[0xF] = (V[(opcode[0] & 0x00F0) >> 4] & 1);
     if(quirks == false)
     {
+        V[0xF] = (V[(opcode[0] & 0x00F0) >> 4] & 1);
         V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x00F0) >> 4] >> 1;
     }
     if(quirks == true)
     {
+        V[0xF] = (V[(opcode[0] & 0x0F00) >> 8] & 1);
         V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x0F00) >> 8] >> 1;
     }
     
@@ -625,16 +773,20 @@ function SUBNVXVY()
 function SHLVXVY()
 {
     V[0xF] = 0;
-    if((V[(opcode[0] & 0x00F0) >> 4] & 0x80) != 0)
-    {
-        V[0xF] = 1;
-    }
     if(quirks == false)
     {
+        if((V[(opcode[0] & 0x00F0) >> 4] & 0x80) != 0)
+        {
+            V[0xF] = 1;
+        }
         V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x00F0) >> 4] << 1;
     }
     if(quirks == true)
     {
+        if((V[(opcode[0] & 0x0F00) >> 8] & 0x80) != 0)
+        {
+            V[0xF] = 1;
+        }
         V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x0F00) >> 8] << 1;
     }
     PC[0] += 2;
@@ -671,6 +823,7 @@ function DRW()
     console.log("height: " + height);
     var width = 7;
     //printf("XY: 0x%X 0x%X 0x%X 0x%X\n", x, y2, height, location);
+    /*
     if(screenMode == 0)
     {
         for(var y = y2; y < height + y2; y++)
@@ -693,8 +846,9 @@ function DRW()
             location[0]++;
         }
     }
-    if(screenMode != 0)
-    {
+    */
+    //if(screenMode != 0)
+    //{
         if(height == 0)
         {
             height = 16;
@@ -714,7 +868,6 @@ function DRW()
                         if(x2 > 7)
                         {
                             var dataG = RAM[location[0]];
-                            display[(x4 + x3) & 0x7F][y % 64] ^= ((dataG & byteGet[x2 & 0x7]) != 0);
                         }
                         if(x2 <= 7)
                         {
@@ -728,42 +881,36 @@ function DRW()
                     }
                     if(display[(x4 + x3) & 0x7F][y % 64] == 1)
                     {
-                        if(((dataG & byteGet[x2]) != 0) == 1)
+                        if(((dataG & byteGet[x2 % 8]) != 0) == 1)
                         {
                             if(newRow == 0)
                             {
                                 V[0xF]++;
                                 newRow = 1;
                             }
+                            if(screenMode == 0)
+                            {
+                                V[0xF] = 1;
+                            }
                         }
                     }
-                    //if(((RAM[location[0]] & byteGet[x2]) != 0))
-                    //{
-                    //    V[0xF] = 1;
-                    //}
                 }
-                //display[x + x3][y] = display[x + x3][y] ^ ((RAM[location[0]] & byteGet[x2]) != 0);
-                //var dataG = ((RAM[location[0] + 1] << 8) | RAM[location[0]]);
-                //var dataG = RAM[location[0] + 1];
-                //var dataG = RAM[location[0]];
                 if(width == 15)
                 {
                     if(x2 > 7)
                     {
                         var dataG = RAM[location[0]];
-                        display[(x4 + x3) & 0x7F][y % 64] ^= ((dataG & byteGet[x2 & 0x7]) != 0);
                     }
                     if(x2 <= 7)
                     {
                         var dataG = RAM[location[0] + 1];
-                        //display[(x4 + x3) & 0x7F][y] ^= ((dataG & byteGet[x2 & 0x7]) != 0);
                     }
                 }
                 if(width != 15)
                 {
                     var dataG = RAM[location[0]];
                 }
-                display[(x4 + x3) & 0x7F][y % 64] ^= ((dataG & byteGet[x2]) != 0);
+                display[(x4 + x3) & 0x7F][y % 64] ^= ((dataG & byteGet[x2 % 8]) != 0);
                 //alert("X: 0x" + (x + x3) + "  Y: 0x" + y)
                 x3++;
             }
@@ -774,7 +921,7 @@ function DRW()
                 location[0]++;
             }
         }
-    }
+    //}
 
     //chip8.breakpoint = true;
     PC[0] += 2;
@@ -871,6 +1018,7 @@ function LDFVX()
 
 function LDFVXS()
 {
+    sChipQuirks();
     I[0] = (( V[(opcode[0] & 0x0F00) >> 8]) * 10);
     PC[0] += 2;
 }
@@ -916,6 +1064,7 @@ function LDVXI()
 
 function SV0VXRPL()
 {
+    sChipQuirks();
     for(var x = 0; x <= ((opcode[0] & 0x0F00) >> 8); x++)
     {
         R[x] = V[x];
@@ -925,6 +1074,7 @@ function SV0VXRPL()
 
 function RV0VXRPL()
 {
+    sChipQuirks();
     for(var x = 0; x <= ((opcode[0] & 0x0F00) >> 8); x++)
     {
         V[x] = R[x];
@@ -1055,7 +1205,14 @@ function loadRomDrop()
     };
     
 
-    
+    quirks = 0;
+    quirksJ = 0;
+    quirksL = 0;
+    quirksS = 0;
+    document.getElementById("quirks").checked = false;
+    document.getElementById("quirksJ").checked = false;
+    qdocument.getElementById("quirksL").checked = false;
+    document.getElementById("quirksS").checked = false;
 }
 
 
@@ -1100,6 +1257,14 @@ function showFile(input)
 
     }
     reader.readAsArrayBuffer(file);
+    quirks = 0;
+    quirksJ = 0;
+    quirksL = 0;
+    quirksS = 0;
+    document.getElementById("quirks").checked = false;
+    document.getElementById("quirksJ").checked = false;
+    qdocument.getElementById("quirksL").checked = false;
+    document.getElementById("quirksS").checked = false;
 }
 
 
