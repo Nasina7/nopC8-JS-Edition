@@ -465,12 +465,12 @@ function runOpcode()
 function sChipQuirks()
 {
     quirks = 1;
-    quirksJ = 1;
-    quirksL = 1;
+    quirksJ = 0;
+    quirksL = 0;
     quirksS = 1;
     document.getElementById("quirks").checked = true;
-    document.getElementById("quirksJ").checked = true;
-    document.getElementById("quirksL").checked = true;
+    document.getElementById("quirksJ").checked = false;
+    document.getElementById("quirksL").checked = false;
     document.getElementById("quirksS").checked = true;
 }
 
@@ -745,12 +745,12 @@ function SUBVXVY()
 
 function SHRVXVY()
 {
-    if(quirks == false)
+    if(quirks == true)
     {
         V[0xF] = (V[(opcode[0] & 0x00F0) >> 4] & 1);
         V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x00F0) >> 4] >> 1;
     }
-    if(quirks == true)
+    if(quirks == false)
     {
         V[0xF] = (V[(opcode[0] & 0x0F00) >> 8] & 1);
         V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x0F00) >> 8] >> 1;
@@ -772,21 +772,15 @@ function SUBNVXVY()
 
 function SHLVXVY()
 {
-    V[0xF] = 0;
-    if(quirks == false)
-    {
-        if((V[(opcode[0] & 0x00F0) >> 4] & 0x80) != 0)
-        {
-            V[0xF] = 1;
-        }
-        V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x00F0) >> 4] << 1;
-    }
     if(quirks == true)
     {
-        if((V[(opcode[0] & 0x0F00) >> 8] & 0x80) != 0)
-        {
-            V[0xF] = 1;
-        }
+       // console.log(((opcode[0] & 0x00F0) >> 4));
+        V[0xF] = ((V[(opcode[0] & 0x00F0) >> 4] & 0x80) != 0);
+        V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x00F0) >> 4] << 1;
+    }
+    if(quirks == false)
+    {
+        V[0xF] = ((V[(opcode[0] & 0x0F00) >> 8] & 0x80) != 0);
         V[(opcode[0] & 0x0F00) >> 8] = V[(opcode[0] & 0x0F00) >> 8] << 1;
     }
     PC[0] += 2;
@@ -820,7 +814,6 @@ function DRW()
     location[0] = I[0];
     var x3 = 0;
     var y2 = V[(opcode[0] & 0x00F0) >> 4];
-    console.log("height: " + height);
     var width = 7;
     //printf("XY: 0x%X 0x%X 0x%X 0x%X\n", x, y2, height, location);
     /*
@@ -854,7 +847,6 @@ function DRW()
             height = 16;
             width = 15;
         }
-        console.log(height);
         for(var y = y2; y < height + y2; y++)
         {
             var newRow = 0;
@@ -1040,7 +1032,7 @@ function LDIVX()
         RAM[location[0]] = V[x];
         location[0]++;
     }
-    if(quirksS == false)
+    if(quirksS == true)
     {
         I[0] = location[0];
     }
@@ -1055,7 +1047,7 @@ function LDVXI()
         V[x] = RAM[location[0]];
         location[0]++;
     }
-    if(quirksS == false)
+    if(quirksS == true)
     {
         I[0] = location[0];
     }
@@ -1150,8 +1142,44 @@ var fileList = [
     "rom/rockto.ch8",
     "rom/supersquare.ch8",
     "rom/turnover77.ch8",
-    "rom/ultimatetictactoe.ch8"
+    "rom/ultimatetictactoe.ch8",
+    "rom/BLINKYS",
+    "rom/DVN8",
+    "rom/EATY.ch8",
+    "rom/HORSE.ch8",
+    "rom/MONDRIAN.ch8",
+    "rom/SWEET COPTER.ch8",
+    "rom/PONG1.ch8",
+    "rom/BOWLING.ch8"
 ];
+
+var gameDesc = [
+    "Description Unfinished", // 15 Puzzle
+    "A Pacman Clone for Chip-8<br>Controls:<br>3: Up<br>E: Down<br>A: Left<br>S: Right", // BLINKY
+    "Description Unfinished", // BLITZ
+    "Description Unfinished", // BRIX
+    "Description Unfinished", // CONNECT 4
+    "Description Unfinished", // GUESS
+    "Description Unfinished", // HIDDEN
+    "Space Invaders for the Chip-8<br>Controls:<br>Q: Move Left<br>E: Move Right<br>W: Shoot", // INVADERS
+    "Description Unfinished", // KALEID
+    "Description Unfinished", // MAZE
+    "Description Unfinished", // MERLIN
+    "Description Unfinished", // MISSILE
+    "Pong for the Chip-8<br>Controls:<br>Player 1:<br>1: Up<br>Q: Down<br>Player 2:<br>4: Up<br>R: Down", // PONG
+    "Pong for the Chip-8<br>Controls:<br>Player 1:<br>1: Up<br>Q: Down<br>Player 2:<br>4: Up<br>R: Down", // PONG2
+    "Description Unfinished", // PUZZLE
+    "Description Unfinished", // SYZYGY
+    "Description Unfinished", // TANK
+    "Tetris for the Chip-8<br>Controls:<br>Q: Rotate<br>W: Move Left<br>E: Move Right<br>A: Soft Drop", // TETRIS
+    "Tic Tac Toe for the Chip-8<br>Controls:<br>1,2,3,Q,W,E,A,S,D: Place piece", // TICTAC
+    "Description Unfinished", // UFO
+    "Description Unfinished", // VBRIX
+    "Description Unfinished", // VERS
+    "Description Unfinished" // WIPEOFF
+];
+
+var rom;
 
 function loadRomDrop()
 {
@@ -1160,6 +1188,12 @@ function loadRomDrop()
     var e2 = document.getElementById("romSelect");
     var value = e2.value;
 
+    document.getElementById("description").innerHTML = gameDesc[value];
+    if(gameDesc[value] == undefined)
+    {
+        document.getElementById("description").innerHTML = "Description Unfinished";
+    }
+    
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open("GET", fileList[value], true);
     xmlHttp.responseType = "arraybuffer";
@@ -1169,7 +1203,7 @@ function loadRomDrop()
         var arrayBuffer2 = xmlHttp.response;
         if(arrayBuffer2)
         {
-            var rom = new Uint8Array(arrayBuffer2);
+            rom = new Uint8Array(arrayBuffer2);
             
         }
         romLoaded = true;
@@ -1211,7 +1245,7 @@ function loadRomDrop()
     quirksS = 0;
     document.getElementById("quirks").checked = false;
     document.getElementById("quirksJ").checked = false;
-    qdocument.getElementById("quirksL").checked = false;
+    document.getElementById("quirksL").checked = false;
     document.getElementById("quirksS").checked = false;
 }
 
@@ -1224,7 +1258,7 @@ function showFile(input)
     let reader = new FileReader();
     reader.onload = function(e) {
         var romf = reader.result;
-        var rom = new Uint8Array(romf);
+        rom = new Uint8Array(romf);
         romLoaded = true;
         for(var i = 0; i < rom.length; i++)
         {
@@ -1263,7 +1297,7 @@ function showFile(input)
     quirksS = 0;
     document.getElementById("quirks").checked = false;
     document.getElementById("quirksJ").checked = false;
-    qdocument.getElementById("quirksL").checked = false;
+    document.getElementById("quirksL").checked = false;
     document.getElementById("quirksS").checked = false;
 }
 
@@ -1299,6 +1333,10 @@ if(romLoaded == true)
         opcode[0] = ((RAM[PC[0]] << 8) | (RAM[PC[0] + 1]));
         pPC[0] = PC[0];
         runOpcode();
+        if(romLoaded == false)
+        {
+            break;
+        }
         instructionsRan++;
         if(breakpoint == 1)
         {
@@ -1313,6 +1351,18 @@ if(romLoaded == true)
             document.getElementById("Prev PC").innerHTML = "Prev PC: 0x" + pPC[0].toString(16);
             alert("Look at Regs!");
         }
+    }
+    if(romLoaded == false)
+    {
+        document.getElementById("Opcode").innerHTML = "0x" + opcode[0].toString(16);
+
+        for(var i = 0; i < 0x10; i++)
+        {
+            document.getElementById("V" + i).innerHTML = "V" + i + ": 0x" + V[i].toString(16);
+        }
+        document.getElementById("I").innerHTML = "I: 0x" + I[0].toString(16);
+        document.getElementById("PC").innerHTML = "PC: 0x" + PC[0].toString(16);
+        document.getElementById("Prev PC").innerHTML = "Prev PC: 0x" + pPC[0].toString(16);
     }
     for(var y = 0; y < getScreenY; y++)
     {

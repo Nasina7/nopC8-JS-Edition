@@ -9,10 +9,19 @@
     left: 0;
     right: 0;
     position: absolute;
+    float:left;
+}
+#entireDiv {
+    display:flex;
+    justify-content: space-between;
 }
 
 #registers {
     float: left;
+}
+
+#descID {
+    text-align: center;
 }
 
 #screen {
