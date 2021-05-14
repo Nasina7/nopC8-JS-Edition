@@ -1155,17 +1155,17 @@ var fileList = [
 
 var gameDesc = [
     "Description Unfinished", // 15 Puzzle
-    "A Pacman Clone for Chip-8<br>Controls:<br>3: Up<br>E: Down<br>A: Left<br>S: Right", // BLINKY
+    "Pacman for Chip-8<br>Controls:<br>3: Up<br>E: Down<br>A: Left<br>S: Right", // BLINKY
     "Description Unfinished", // BLITZ
-    "Description Unfinished", // BRIX
-    "Description Unfinished", // CONNECT 4
+    "Breakout clone for Chip-8<br>Controls:<br>Q: Move Left<br>E: Move Right", // BRIX
+    "Connect 4 for the Chip-8<br>Make sure to set OPF to 1<br>Controls:<br>Q: Move Left<br>E: Move Right<br>W: Place Piece", // CONNECT 4
     "Description Unfinished", // GUESS
-    "Description Unfinished", // HIDDEN
+    "Card Matching for the Chip-8<br>Set OPF to 1<br>Controls:<br>2,Q,E,S: Move Around<br>W: Select Card", // HIDDEN
     "Space Invaders for the Chip-8<br>Controls:<br>Q: Move Left<br>E: Move Right<br>W: Shoot", // INVADERS
     "Description Unfinished", // KALEID
-    "Description Unfinished", // MAZE
-    "Description Unfinished", // MERLIN
-    "Description Unfinished", // MISSILE
+    "Generates a cool looking Maze on Chip-8", // MAZE
+    "Simon Says for Chip-8<br>Controls:<br>Q,W,A,S: Press Button", // MERLIN
+    "Use a tank to shoot ovals<br>Controls:<br>S: Shoot", // MISSILE
     "Pong for the Chip-8<br>Controls:<br>Player 1:<br>1: Up<br>Q: Down<br>Player 2:<br>4: Up<br>R: Down", // PONG
     "Pong for the Chip-8<br>Controls:<br>Player 1:<br>1: Up<br>Q: Down<br>Player 2:<br>4: Up<br>R: Down", // PONG2
     "Description Unfinished", // PUZZLE
@@ -1176,7 +1176,52 @@ var gameDesc = [
     "Description Unfinished", // UFO
     "Description Unfinished", // VBRIX
     "Description Unfinished", // VERS
-    "Description Unfinished" // WIPEOFF
+    "Description Unfinished", // WIPEOFF
+    "Ace Attourny clone for Chip-8<br>Controls:<br>Any: Advance Text", // 8CE1
+    "Ace Attourny clone for Chip-8<br>Controls:<br>Q: Get Info<br>W: Advance Text<br>E: Show Item", // 8CE2
+    "Ace Attourny clone for Chip-8<br>Controls:<br>Any: Advance Text", // 8CE3
+    "Description Unfinished", // RPS
+    "Description Unfinished", // DANMAKU
+    "Description Unfinished", // FLIGHT
+    "Description Unfinished", // SNAKE
+    "Description Unfinished", // BADKAIJUJU
+    "Description Unfinished", // BR8KOUT
+    "Description Unfinished", // CAVE EXPLORER
+    "Description Unfinished", // CHIP WAR
+    "Description Unfinished", // DOWN 8
+    "Description Unfinished", // FUSE
+    "Description Unfinished", // GHOST ESCAPE
+    "Description Unfinished", // MASQUER8
+    "Description Unfinished", // MASTERMIND
+    "Description Unfinished", // MINI-LIGHTS-OUT
+    "Intro Screen for OctoJam #1", // OCTOJAM TITLE 1
+    "Intro Screen for OctoJam #2", // OCTOJAM TITLE 2
+    "Intro Screen for OctoJam #3", // OCTOJAM TITLE 3
+    "Intro Screen for OctoJam #4", // OCTOJAM TITLE 4
+    "Intro Screen for OctoJam #5", // OCTOJAM TITLE 5
+    "Intro Screen for OctoJam #6", // OCTOJAM TITLE 6
+    "Intro Screen for OctoJam #7", // OCTOJAM TITLE 7
+    "Description Unfinished", // OCTORANCHER
+    "Description Unfinished", // OUTLAW
+    "Description Unfinished", // PET DOG
+    "Description Unfinished", // PIPER
+    "Description Unfinished", // PUMPKIN DRESS UP
+    "Description Unfinished", // SLIPPERY SLOPE
+    "Description Unfinished", // SPACE JAM
+    "Description Unfinished", // TANK
+    "Description Unfinished", // TOMBSTONETIPP
+    "Move through a series of rocks to get items and go to the next stage!<br>5 Stages total<br>Controls:<br>W,A,S,D: Move", // ROCKTO
+    "Description Unfinished", // SUPER SQUARE
+    "Navigate a rotating bar through obstacles<br>Controls:<br>W,A,S,D: Move", // TURNOVER77
+    "Description Unfinished", // ULTIMATE TIC-TAC-TOE
+    "Pacman for Chip-8<br>Controls:<br>3: Up<br>E: Down<br>A: Left<br>S: Right", // BLINKY SUPERCHIP
+    "Description Unfinished", // DVN8
+    "Description Unfinished", // EATY
+    "Make a horse jump over obstacles!<br>Controls:<br>X: Jump", // HORSE JUMP
+    "Draws some cool graphics onto the screen", // MONDRIAN
+    "Guide a Helicopter through bars, but don't hit them!<br>Controls:<br>E: Move left and Right", // SWEET COPTER
+    "1 Player version of pong for the Chip-8<br>Controls:<br>1: Up<br>Q: Down", // PONG
+    "Bowling for the Chip-8<br>Controls:<br>W: Bowl<br>1,2,3,Q,W,E,A,S,D: Menu Keys" // BOWLING
 ];
 
 var rom;
@@ -1191,7 +1236,7 @@ function loadRomDrop()
     document.getElementById("description").innerHTML = gameDesc[value];
     if(gameDesc[value] == undefined)
     {
-        document.getElementById("description").innerHTML = "Description Unfinished";
+        document.getElementById("description").innerHTML = "Desciription Unfinished";
     }
     
     var xmlHttp = new XMLHttpRequest();
